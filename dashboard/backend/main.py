@@ -1084,9 +1084,11 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
 # --- Static Frontend Serving for Single-Service Cloud Deployments ---
 def _find_frontend_dist() -> Optional[Path]:
     candidates = [
-        Path(__file__).resolve().parent.parent / "dist",
         Path(__file__).resolve().parent / "dist",
+        Path(__file__).resolve().parent.parent / "dist",
         BASE_DIR / "dashboard" / "dist",
+        Path("dist").resolve(),
+        Path("../dist").resolve(),
     ]
     for cand in candidates:
         if cand.exists() and (cand / "index.html").exists():
@@ -1096,13 +1098,9 @@ def _find_frontend_dist() -> Optional[Path]:
 FRONTEND_DIST = _find_frontend_dist()
 
 if FRONTEND_DIST:
-    assets_dir = FRONTEND_DIST / "assets"
-    if assets_dir.exists():
-        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="static_assets")
+    @app.get("/")
+    async def serve_root():
+        return FileResponse(str(FRONTEND_DIST / "index.html"))
 
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        target = FRONTEND_DIST / full_path
-        if target.is_file():
-            return FileResponse(str(target))
-        return FileResponse(str(FRONTEND_DIST / "index.html"))
+    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="static_frontend")
+
