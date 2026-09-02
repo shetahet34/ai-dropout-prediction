@@ -1,0 +1,6 @@
+﻿node_modules
+.git
+.ipynb_checkpoints
+notebook
+__pycache__
+*.pyc

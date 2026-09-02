@@ -1,0 +1,15 @@
+﻿# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Local environment & checkpoints
+.env
+.venv/
+env/
+venv/
+.ipynb_checkpoints/
+
+# System files
+.DS_Store
+Thumbs.db
