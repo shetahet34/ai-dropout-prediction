@@ -116,3 +116,14 @@ export async function fetchDataSources(token) {
   if (!res.ok) return {};
   return res.json();
 }
+
+export async function fetchMentorsDirectory() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/mentors/directory`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+

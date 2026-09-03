@@ -461,58 +461,110 @@ class PolicyModel(BaseModel):
     medium_score: int = 2
 
 
-# --- Auth Routes ---
+# --- Auth & Directory Routes ---
+
+@app.get("/mentors/directory")
+def get_mentors_directory():
+    with get_db() as conn:
+        cursor = conn.cursor()
+        rows = cursor.execute("""
+            SELECT mentor_name, count(*) as count 
+            FROM student_risk_scores 
+            WHERE mentor_name IS NOT NULL AND mentor_name != ''
+            GROUP BY mentor_name 
+            ORDER BY mentor_name ASC
+        """).fetchall()
+    return [{"name": r[0], "count": r[1]} for r in rows]
+
 
 @app.post("/auth/login")
 def login(payload: LoginRequest):
     req_id = payload.account_id.strip()
-    accounts = get_accounts()
-    account = next((a for a in accounts if a.get("id", "").lower() == req_id.lower()), None)
-    
-    if not account:
-        account = next((a for a in accounts if req_id.lower() in a.get("name", "").lower()), None)
+    raw_lower = req_id.lower()
 
-    if not account:
-        with get_db() as conn:
-            db_mentors = [r[0] for r in conn.execute("SELECT DISTINCT mentor_name FROM student_risk_scores WHERE mentor_name IS NOT NULL").fetchall()]
-        
-        req_clean = req_id.lower().replace("-", " ").strip()
-        matched_mentor = None
+    with get_db() as conn:
+        cursor = conn.cursor()
+        db_mentors = [r[0] for r in cursor.execute("SELECT DISTINCT mentor_name FROM student_risk_scores WHERE mentor_name IS NOT NULL AND mentor_name != ''").fetchall()]
+
+    account = None
+
+    # 1. Principal Accounts
+    if raw_lower in ["principal", "admin", "school principal", "principal-science", "principal-commerce"]:
+        stream = "Science" if "science" in raw_lower else ("Commerce" if "commerce" in raw_lower else None)
+        account = {
+            "id": "principal",
+            "name": "School Principal",
+            "role": "principal",
+            "stream": stream,
+            "mentor_name": None,
+            "password": payload.password
+        }
+    else:
+        # 2. Match Any Mentor from Database
+        resolved_mentor = None
+
+        # Exact match (case insensitive)
         for m in db_mentors:
-            m_clean = m.lower().replace("-", " ").strip()
-            if m.lower() == req_id.lower() or req_clean in m_clean or m_clean in req_clean:
-                matched_mentor = m
+            if m.lower() == raw_lower:
+                resolved_mentor = m
                 break
-            surname = m.rsplit("-", 1)[-1].strip().lower()
-            if surname in req_clean or req_clean == surname:
-                matched_mentor = m
-                break
-        
-        if matched_mentor:
+
+        # Known shortcuts
+        if not resolved_mentor:
+            if raw_lower in ["mentor-anita", "anita"]:
+                resolved_mentor = next((m for m in db_mentors if "sharma" in m.lower()), "Mentor A - Sharma")
+            elif raw_lower in ["mentor-rohan", "rohan"]:
+                resolved_mentor = next((m for m in db_mentors if "mehta" in m.lower()), "Mentor D - Mehta")
+
+        # Cleaned token & substring search across all 160 mentors
+        if not resolved_mentor:
+            cleaned = raw_lower.replace("-", " ").replace("_", " ")
+            cleaned_tokens = [t for t in cleaned.split() if t]
+            best_score = 0
+            for m in db_mentors:
+                m_cleaned = m.lower().replace("-", " ").replace("_", " ")
+                m_tokens = [t for t in m_cleaned.split() if t]
+                score = len(set(cleaned_tokens).intersection(set(m_tokens)))
+                if cleaned in m_cleaned or m_cleaned in cleaned:
+                    score += 5
+                surname = m.rsplit("-", 1)[-1].strip().lower()
+                if surname in cleaned_tokens or cleaned == surname:
+                    score += 3
+                if score > best_score:
+                    best_score = score
+                    resolved_mentor = m
+
+        if resolved_mentor:
             account = {
-                "id": req_id,
-                "name": matched_mentor,
-                "mentor_name": matched_mentor,
+                "id": resolved_mentor,
+                "name": resolved_mentor,
+                "mentor_name": resolved_mentor,
                 "role": "mentor",
                 "password": payload.password
             }
-        elif req_id.lower().startswith("mentor") or "mentor" in req_id.lower():
-            matched_mentor = db_mentors[0] if db_mentors else "Mentor A - Sharma"
+        elif raw_lower.startswith("mentor") or "mentor" in raw_lower:
+            fallback = db_mentors[0] if db_mentors else "Mentor A - Sharma"
             account = {
                 "id": req_id,
-                "name": matched_mentor,
-                "mentor_name": matched_mentor,
+                "name": fallback,
+                "mentor_name": fallback,
                 "role": "mentor",
                 "password": payload.password
             }
         else:
-            raise HTTPException(401, "Account not found. Use 'principal', 'mentor-anita', 'mentor-rohan', or a mentor name.")
+            raise HTTPException(401, f"Account '{req_id}' not found. Enter 'principal' or any mentor name from the school directory.")
 
-    if not secrets.compare_digest(str(account.get("password", "")), payload.password):
-        if payload.password not in ["change-me", "mentor123", "principal123", "admin123", "password"]:
-            raise HTTPException(401, "Incorrect password")
+    # Validate Passwords
+    # Standard acceptable passwords across development and production
+    valid_passwords = ["change-me", "mentor123", "principal123", "admin123", "password", "123456", "secret"]
+    if account["role"] == "mentor":
+        surname = account["name"].rsplit("-", 1)[-1].strip().lower()
+        valid_passwords.extend([f"{surname}123", surname])
 
-    mentor_name = account.get("mentor_name") or (account.get("name") if account.get("role") == "mentor" else None)
+    if payload.password.strip() not in valid_passwords:
+        raise HTTPException(401, "Incorrect password. You can use 'mentor123' or 'change-me'.")
+
+    mentor_name = account.get("mentor_name")
 
     token = secrets.token_urlsafe(32)
     public_account = {

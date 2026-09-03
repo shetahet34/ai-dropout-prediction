@@ -1,11 +1,20 @@
-import { useState } from "react";
-import { login } from "../api/students";
+import { useState, useEffect } from "react";
+import { login, fetchMentorsDirectory } from "../api/students";
 
 export function MentorLogin({ onLogin }) {
   const [accountId, setAccountId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [mentors, setMentors] = useState([]);
+
+  useEffect(() => {
+    fetchMentorsDirectory()
+      .then((data) => {
+        if (Array.isArray(data)) setMentors(data);
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -44,19 +53,74 @@ export function MentorLogin({ onLogin }) {
         <div className="login-heading">
           <p className="eyebrow">Secure Access Portal</p>
           <h2>Welcome Back</h2>
-          <p>Sign in with your institutional credentials to open your student success workspace.</p>
+          <p>Sign in with your mentor or principal credentials to open your personalized student workspace.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           <label>
+            Select Mentor or Principal from Directory
+            <select
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  setAccountId(val);
+                  if (val.toLowerCase().includes("principal")) {
+                    setPassword("principal123");
+                  } else {
+                    setPassword("mentor123");
+                  }
+                }
+              }}
+              value={mentors.some((m) => m.name === accountId) || accountId === "principal" ? accountId : ""}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                background: "#081926",
+                border: "1px solid rgba(45, 212, 191, 0.35)",
+                borderRadius: "8px",
+                color: "#e2e8f0",
+                fontSize: "13px",
+                marginBottom: "8px",
+                outline: "none",
+                cursor: "pointer",
+              }}
+            >
+              <option value="">-- Choose Account (Principal or Any Mentor) --</option>
+              <option value="principal">🎓 School Principal (All School Cohort)</option>
+              {mentors.map((m) => (
+                <option key={m.name} value={m.name}>
+                  🧑‍🏫 {m.name} ({m.count} students assigned)
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
             User Account ID
             <input
+              list="mentor-directory-datalist"
               value={accountId}
-              onChange={(event) => setAccountId(event.target.value)}
-              placeholder="e.g. principal or mentor-anita"
+              onChange={(event) => {
+                const val = event.target.value;
+                setAccountId(val);
+                if (val.toLowerCase().includes("principal") && !password) {
+                  setPassword("principal123");
+                } else if (!password) {
+                  setPassword("mentor123");
+                }
+              }}
+              placeholder="e.g. principal, or any mentor name"
               autoComplete="username"
               required
             />
+            <datalist id="mentor-directory-datalist">
+              <option value="principal">School Principal (All 5,000 Students)</option>
+              {mentors.map((m) => (
+                <option key={m.name} value={m.name}>
+                  {m.name} ({m.count} students)
+                </option>
+              ))}
+            </datalist>
           </label>
 
           <label>
@@ -65,7 +129,7 @@ export function MentorLogin({ onLogin }) {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
+              placeholder="Enter password (e.g. mentor123)"
               autoComplete="current-password"
               required
             />
@@ -79,11 +143,10 @@ export function MentorLogin({ onLogin }) {
           </button>
         </form>
 
-        <div style={{ marginTop: "18px", padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", fontSize: "11px", color: "#94a3b8", lineHeight: "1.6" }}>
-          <strong style={{ color: "#2dd4bf", display: "block", marginBottom: "4px" }}>🔑 Access Credentials:</strong>
-          <div>• <strong>Principal</strong> (All students): <code>principal</code> / <code>principal123</code></div>
-          <div>• <strong>Mentor Anita</strong> (Assigned cohort): <code>mentor-anita</code> / <code>change-me</code></div>
-          <div>• <strong>Mentor Rohan</strong> (Assigned cohort): <code>mentor-rohan</code> / <code>mentor123</code></div>
+        <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", fontSize: "11px", color: "#94a3b8", lineHeight: "1.6" }}>
+          <strong style={{ color: "#2dd4bf", display: "block", marginBottom: "4px" }}>🔑 Universal Access:</strong>
+          <div>• <strong>Principal</strong>: <code>principal</code> / <code>principal123</code> (Whole school)</div>
+          <div>• <strong>Every Mentor</strong>: Select or type any mentor name / password: <code>mentor123</code></div>
         </div>
 
         <p className="login-footnote">
