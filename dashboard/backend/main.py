@@ -1038,19 +1038,22 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
                     rows_imported += 1
 
         # Prune inactive students: keep only students that exist in the active registers
-        active_sids = set(r[0] for r in cursor.execute("""
-            SELECT DISTINCT student_id FROM attendance
-            UNION
-            SELECT DISTINCT student_id FROM assessments
-            UNION
-            SELECT DISTINCT student_id FROM fees
-        """).fetchall())
-
-        if active_sids:
-            all_sids_list = list(active_sids)
-            placeholders = ",".join("?" for _ in all_sids_list)
-            cursor.execute(f"DELETE FROM students WHERE student_id NOT IN ({placeholders})", all_sids_list)
-            cursor.execute(f"DELETE FROM student_risk_scores WHERE student_id NOT IN ({placeholders})", all_sids_list)
+        cursor.execute("""
+            DELETE FROM students 
+            WHERE student_id NOT IN (
+                SELECT student_id FROM attendance
+                UNION
+                SELECT student_id FROM assessments
+                UNION
+                SELECT student_id FROM fees
+            )
+        """)
+        cursor.execute("""
+            DELETE FROM student_risk_scores 
+            WHERE student_id NOT IN (
+                SELECT student_id FROM students
+            )
+        """)
 
         # Real-time Recalculate Risk Scores using active dynamic institutional policy
         recalculate_cohort_risk_scores(conn)
@@ -1067,6 +1070,7 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
                 updated_at = excluded.updated_at
         """, (source, source_name, filename, file_type, rows_imported or len(df), now))
 
+        total_students = cursor.execute("SELECT count(*) FROM students").fetchone()[0]
         conn.commit()
 
     return {
@@ -1076,8 +1080,8 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
         "rows_imported": rows_imported or len(df),
         "status": "success",
         "timestamp": now,
-        "total_cohort_students": len(all_scored),
-        "message": f"Successfully ingested {rows_imported or len(df)} records from {filename}. Old data pruned; total active cohort is now {len(all_scored)} students."
+        "total_cohort_students": total_students,
+        "message": f"Successfully ingested {rows_imported or len(df)} records from {filename}. Total active cohort is now {total_students} students."
     }
 
 
