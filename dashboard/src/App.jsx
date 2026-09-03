@@ -18,11 +18,16 @@ import { MentorStudentsGrouping } from "./components/MentorStudentsGrouping";
 import { PerformanceMomentumChart } from "./components/PerformanceMomentumChart";
 import { EarlyWarningOperations } from "./components/EarlyWarningOperations";
 import { MentorLogin } from "./components/MentorLogin";
+import { MentorRiskQuadrantChart } from "./components/mentor/MentorRiskQuadrantChart";
+import { MentorInterventionPipelineChart } from "./components/mentor/MentorInterventionPipelineChart";
+import { MentorSubjectVulnerabilityChart } from "./components/mentor/MentorSubjectVulnerabilityChart";
+import { MentorAttendanceVelocityChart } from "./components/mentor/MentorAttendanceVelocityChart";
 import { logout, fetchPolicy } from "./api/students";
 import { useEffect } from "react";
 
 function App() {
   const [session, setSession] = useState(() => JSON.parse(sessionStorage.getItem("mentor_session") || "null"));
+  const isPrincipal = session?.account?.role === "principal";
   const { students, loading, error, refresh: refreshStudents } = useAtRiskStudents(session?.token);
   const [policy, setPolicy] = useState({ attendance: 75, failed_subjects: 1, fee_days: 30 });
   const [activeTab, setActiveTab] = useState("overview");
@@ -209,32 +214,47 @@ function App() {
           <div className="dashboard-view">
             <div className="view-heading">
               <div>
-                <p className="eyebrow">Institutional Health</p>
-                <h2>Cohort Overview & Performance</h2>
-                <p>Real-time risk distribution, performance momentum, and intervention priorities across enrolled students.</p>
+                <p className="eyebrow">{isPrincipal ? "Institutional Health" : "Advisory Cockpit"}</p>
+                <h2>{isPrincipal ? "Cohort Overview & Performance" : `${session?.account?.name || "Faculty"} · Mentee Caseload`}</h2>
+                <p>
+                  {isPrincipal
+                    ? "Real-time risk distribution, performance momentum, and intervention priorities across enrolled students."
+                    : "Actionable risk triage, intervention tracking, and subject vulnerability signals for your assigned students."}
+                </p>
               </div>
               <span className="view-heading__meta">
-                {students.length.toLocaleString()} Active Students
+                {students.length.toLocaleString()} {isPrincipal ? "Active Students" : "Assigned Mentees"}
               </span>
             </div>
 
             <AnalyticsMetrics students={students} />
             <PriorityStudentsPanel students={students} onSelect={setSelectedStudent} />
 
-            <div className="chart-grid">
-              <RiskDistributionChart students={students} />
-              <PerformanceChart students={students} />
-              <AttendanceTrendChart students={students} />
-              <SubjectAnalysis students={students} />
-              <MentorAnalysis students={students} />
-              <ClassPerformanceChart students={students} />
-              <ClassRiskChart students={students} />
-              <PerformanceMomentumChart students={students} />
-            </div>
+            {isPrincipal ? (
+              <>
+                <div className="chart-grid">
+                  <RiskDistributionChart students={students} />
+                  <PerformanceChart students={students} />
+                  <AttendanceTrendChart students={students} />
+                  <SubjectAnalysis students={students} />
+                  <MentorAnalysis students={students} />
+                  <ClassPerformanceChart students={students} />
+                  <ClassRiskChart students={students} />
+                  <PerformanceMomentumChart students={students} />
+                </div>
 
-            <div className="single-panel-grid" style={{ marginTop: "24px" }}>
-              <MentorStudentsGrouping students={students} onSelect={setSelectedStudent} />
-            </div>
+                <div className="single-panel-grid" style={{ marginTop: "24px" }}>
+                  <MentorStudentsGrouping students={students} onSelect={setSelectedStudent} />
+                </div>
+              </>
+            ) : (
+              <div className="chart-grid">
+                <MentorRiskQuadrantChart students={students} onSelect={setSelectedStudent} />
+                <MentorInterventionPipelineChart students={students} />
+                <MentorSubjectVulnerabilityChart students={students} />
+                <MentorAttendanceVelocityChart students={students} />
+              </div>
+            )}
           </div>
         )}
 
