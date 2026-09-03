@@ -23,12 +23,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 def _resolve_db_path() -> Path:
     env_db = os.getenv("EARLY_WARNING_DB")
     if env_db:
-        return Path(env_db)
+        p = Path(env_db)
+        if p.exists() and p.stat().st_size > 0:
+            return p
+        backend_p = Path(__file__).resolve().parent / env_db
+        if backend_p.exists() and backend_p.stat().st_size > 0:
+            return backend_p
+
     candidates = [
-        BASE_DIR / "database" / "project_current.db",
         Path(__file__).resolve().parent / "project_current.db",
-        Path(__file__).resolve().parent.parent / "database" / "project_current.db",
         Path(__file__).resolve().parent / "early_warning.db",
+        BASE_DIR / "database" / "project_current.db",
+        Path(__file__).resolve().parent.parent / "database" / "project_current.db",
+        BASE_DIR / "database" / "early_warning.db",
         BASE_DIR / "database" / "project.db",
     ]
     for cand in candidates:
@@ -54,7 +61,20 @@ app = FastAPI(title="Student Early Warning Intelligence API", version="2.0")
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat(), "db_found": DB_PATH.exists()}
+    stu_count = 0
+    try:
+        with get_db() as conn:
+            stu_count = conn.execute("SELECT count(*) FROM students").fetchone()[0]
+    except Exception:
+        pass
+    return {
+        "status": "ok",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "db_found": DB_PATH.exists(),
+        "db_file": str(DB_PATH.name),
+        "total_students": stu_count,
+        "version": "5000-cohort"
+    }
 
 
 app.add_middleware(
