@@ -101,10 +101,10 @@ function App() {
   }
 
   const tabs = [
-    { id: "overview", label: "📊 Overview", icon: "📈" },
-    { id: "analysis", label: "🔍 Analysis", icon: "📉" },
-    { id: "students", label: "👥 Directory", icon: "📋" },
-    { id: "operations", label: "⚙️ Operations", icon: "⚡" },
+    { id: "overview", label: "Overview", icon: "📊" },
+    { id: "analysis", label: "Risk Diagnostics", icon: "🔍" },
+    { id: "students", label: "Student Directory", icon: "👥" },
+    { id: "operations", label: "Operations & Ingestion", icon: "⚡" },
   ];
 
   const filteredStudents = students.filter((student) => {
@@ -138,11 +138,10 @@ function App() {
       <header className="dashboard-header">
         <div className="dashboard-header__inner">
           <div>
-
-            <p className="eyebrow" style={{ marginTop: "6px" }}>Student Success Operations</p>
-            <h1>Student Performance & Risk Intelligence</h1>
+            <p className="eyebrow" style={{ marginTop: "6px" }}>Northstar Early Warning System</p>
+            <h1>Student Retention & Risk Intelligence</h1>
             <p className="dashboard-header__subtitle">
-              Continuous dropout prediction, transparent risk factor explanations, and proactive intervention management.
+              Predictive risk analytics, factor explanations, and proactive intervention management.
             </p>
           </div>
           
@@ -150,14 +149,14 @@ function App() {
             <button
               className="refresh-button"
               style={{
-                background: "rgba(45, 212, 191, 0.15)",
-                border: "1px solid rgba(45, 212, 191, 0.4)",
+                background: "rgba(45, 212, 191, 0.12)",
+                border: "1px solid rgba(45, 212, 191, 0.35)",
                 color: "#2dd4bf",
                 padding: "8px 14px",
                 borderRadius: "8px",
                 cursor: "pointer",
                 fontWeight: "600",
-                fontSize: "13px",
+                fontSize: "12px",
                 display: "flex",
                 alignItems: "center",
                 gap: "6px"
@@ -165,9 +164,9 @@ function App() {
               onClick={async () => {
                 await refreshStudents();
               }}
-              title="Click to pull latest database records and recalculated risk scores"
+              title="Pull latest database records and recalculated risk scores"
             >
-              🔄 Refresh Data ({students.length})
+              🔄 Sync Data ({students.length.toLocaleString()})
             </button>
             <span className="live-status">
               <span />
@@ -199,7 +198,7 @@ function App() {
                 onClick={() => setActiveTab(tab.id)}
               >
                 <span className="dashboard-tab__icon">{tab.icon}</span>
-                {tab.label.replace(/^\S+\s/, "")}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -210,126 +209,31 @@ function App() {
           <div className="dashboard-view">
             <div className="view-heading">
               <div>
-                <p className="eyebrow">Cohort Overview</p>
-                <h2>Institutional Academic & Risk Health</h2>
-                <p>Monitor cohort-wide dropout risk indicators, attendance momentum, and fee payment health.</p>
+                <p className="eyebrow">Institutional Health</p>
+                <h2>Cohort Overview & Performance</h2>
+                <p>Real-time risk distribution, performance momentum, and intervention priorities across enrolled students.</p>
               </div>
               <span className="view-heading__meta">
-                {filteredStudents.length !== students.length ? `${filteredStudents.length} of ${students.length} Filtered` : `${students.length} Active Records`}
+                {students.length.toLocaleString()} Active Students
               </span>
             </div>
 
-            {/* Dynamic Quick Filters */}
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", marginBottom: "20px", padding: "12px 16px", background: "rgba(15, 33, 49, 0.7)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <span style={{ fontSize: "12px", color: "#9ab3b8", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginRight: "4px" }}>⚡ Dynamic Filters:</span>
-              <button
-                onClick={() => setFilters((f) => ({ ...f, riskLevel: "all", stream: "all", search: "" }))}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  border: filters.riskLevel === "all" && filters.stream === "all" ? "1px solid #2dd4bf" : "1px solid rgba(255,255,255,0.1)",
-                  background: filters.riskLevel === "all" && filters.stream === "all" ? "rgba(45, 212, 191, 0.2)" : "rgba(255,255,255,0.03)",
-                  color: filters.riskLevel === "all" && filters.stream === "all" ? "#2dd4bf" : "#cbd5e1",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
-                All Students ({students.length})
-              </button>
-              <button
-                onClick={() => setFilters((f) => ({ ...f, riskLevel: f.riskLevel === "high" ? "all" : "high" }))}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  border: filters.riskLevel === "high" ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)",
-                  background: filters.riskLevel === "high" ? "rgba(239, 68, 68, 0.25)" : "rgba(255,255,255,0.03)",
-                  color: filters.riskLevel === "high" ? "#fca5a5" : "#cbd5e1",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
-                🔴 High Risk ({students.filter((s) => s.risk_band === "red" || s.dropout_probability >= 0.7).length})
-              </button>
-              <button
-                onClick={() => setFilters((f) => ({ ...f, riskLevel: f.riskLevel === "medium" ? "all" : "medium" }))}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  border: filters.riskLevel === "medium" ? "1px solid #f59e0b" : "1px solid rgba(255,255,255,0.1)",
-                  background: filters.riskLevel === "medium" ? "rgba(245, 158, 11, 0.25)" : "rgba(255,255,255,0.03)",
-                  color: filters.riskLevel === "medium" ? "#fcd34d" : "#cbd5e1",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
-                🟡 Moderate Risk ({students.filter((s) => s.risk_band === "amber" || (s.dropout_probability >= 0.4 && s.dropout_probability < 0.7)).length})
-              </button>
-              <button
-                onClick={() => setFilters((f) => ({ ...f, riskLevel: f.riskLevel === "low" ? "all" : "low" }))}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  border: filters.riskLevel === "low" ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
-                  background: filters.riskLevel === "low" ? "rgba(16, 185, 129, 0.25)" : "rgba(255,255,255,0.03)",
-                  color: filters.riskLevel === "low" ? "#6ee7b7" : "#cbd5e1",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
-                🟢 Low Risk ({students.filter((s) => s.risk_band === "green" || (s.dropout_probability !== null && s.dropout_probability < 0.4)).length})
-              </button>
-              <button
-                onClick={() => setFilters((f) => ({ ...f, stream: f.stream === "Science" ? "all" : "Science" }))}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  border: filters.stream === "Science" ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,0.1)",
-                  background: filters.stream === "Science" ? "rgba(56, 189, 248, 0.2)" : "rgba(255,255,255,0.03)",
-                  color: filters.stream === "Science" ? "#38bdf8" : "#cbd5e1",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
-                🔬 Science ({students.filter((s) => s.stream === "Science").length})
-              </button>
-              <button
-                onClick={() => setFilters((f) => ({ ...f, stream: f.stream === "Commerce" ? "all" : "Commerce" }))}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  border: filters.stream === "Commerce" ? "1px solid #a78bfa" : "1px solid rgba(255,255,255,0.1)",
-                  background: filters.stream === "Commerce" ? "rgba(167, 139, 250, 0.2)" : "rgba(255,255,255,0.03)",
-                  color: filters.stream === "Commerce" ? "#a78bfa" : "#cbd5e1",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
-                💼 Commerce ({students.filter((s) => s.stream === "Commerce").length})
-              </button>
-            </div>
-
-            <AnalyticsMetrics students={filteredStudents} />
-            <PriorityStudentsPanel students={filteredStudents} onSelect={setSelectedStudent} />
+            <AnalyticsMetrics students={students} />
+            <PriorityStudentsPanel students={students} onSelect={setSelectedStudent} />
 
             <div className="chart-grid">
-              <RiskDistributionChart students={filteredStudents} />
-              <PerformanceChart students={filteredStudents} />
-              <AttendanceTrendChart students={filteredStudents} />
-              <SubjectAnalysis students={filteredStudents} />
-              <MentorAnalysis students={filteredStudents} />
-              <ClassPerformanceChart students={filteredStudents} />
-              <ClassRiskChart students={filteredStudents} />
-              <PerformanceMomentumChart students={filteredStudents} />
+              <RiskDistributionChart students={students} />
+              <PerformanceChart students={students} />
+              <AttendanceTrendChart students={students} />
+              <SubjectAnalysis students={students} />
+              <MentorAnalysis students={students} />
+              <ClassPerformanceChart students={students} />
+              <ClassRiskChart students={students} />
+              <PerformanceMomentumChart students={students} />
             </div>
 
             <div className="single-panel-grid" style={{ marginTop: "24px" }}>
-              <MentorStudentsGrouping students={filteredStudents} onSelect={setSelectedStudent} />
+              <MentorStudentsGrouping students={students} onSelect={setSelectedStudent} />
             </div>
           </div>
         )}
@@ -387,11 +291,11 @@ function App() {
           <div className="dashboard-view">
             <div className="view-heading">
               <div>
-                <p className="eyebrow">Operations Hub</p>
-                <h2>Data Ingestion, Risk Policy & Automated Alerts</h2>
-                <p>Manage data synchronization, adjust institutional risk rules, and trigger automated parent/mentor communications.</p>
+                <p className="eyebrow">Operations</p>
+                <h2>Data Ingestion & Risk Policies</h2>
+                <p>Synchronize institutional registers, calibrate risk thresholds, and dispatch automated alerts.</p>
               </div>
-              <span className="view-heading__meta">Control Center</span>
+              <span className="view-heading__meta">Operations Hub</span>
             </div>
             <EarlyWarningOperations
               students={students}
@@ -410,8 +314,8 @@ function App() {
       </div>
 
       {/* Footer */}
-      <footer style={{ textAlign: "center", padding: "32px 24px", color: "#66858b", fontSize: "12px", borderTop: "1px solid rgba(45, 212, 191, 0.15)", marginTop: "48px" }}>
-        <p>Northstar Academy Early Warning & Risk Intelligence System · Powered by Explainable Machine Learning · Data Refreshed: {new Date().toLocaleTimeString()}</p>
+      <footer style={{ textAlign: "center", padding: "24px 20px", color: "#64748b", fontSize: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.06)", marginTop: "40px" }}>
+        <p>Northstar Academy Early Warning System · ML Inference Engine v2.4</p>
       </footer>
 
       {/* Student 360 Modal */}

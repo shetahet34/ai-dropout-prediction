@@ -340,12 +340,12 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
       <section className="operations-card operations-card--wide">
         <div className="operations-heading">
           <div>
-            <p className="operations-kicker">01 · Enterprise Data Fabric & Ingestion</p>
-            <h2>Connected Institutional Registers</h2>
-            <p>Hot-swap and synchronize live School ERP/SIS registers. Changes trigger automated schema validation, student directory synchronization, and real-time ML risk scoring.</p>
+            <p className="operations-kicker">01 · Data Ingestion</p>
+            <h2>Institutional Data Registers</h2>
+            <p>Upload or hot-swap student ERP registers to update cohort risk scores and ML predictions.</p>
           </div>
           <span className="operations-chip">
-            {Object.keys(imports).length}/{sourceDefinitions.length} Registers Synchronized
+            {Object.keys(imports).length} of {sourceDefinitions.length} Registers Synced
           </span>
         </div>
 
@@ -354,17 +354,17 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", background: "#10b981", boxShadow: "0 0 10px #10b981" }}></span>
             <div>
-              <span style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#10b981", letterSpacing: "0.5px", textTransform: "uppercase" }}>Data Pipeline Status: Operational & Synced</span>
-              <span style={{ fontSize: "12px", color: "#94a3b8" }}>Inference Engine: XGBoost + Tree SHAP Explainer (v2.4)</span>
+              <span style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#10b981", letterSpacing: "0.5px", textTransform: "uppercase" }}>Pipeline Status: Operational</span>
+              <span style={{ fontSize: "12px", color: "#94a3b8" }}>Inference: XGBoost + Tree SHAP Explainer (v2.4)</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
             <div style={{ textAlign: "right" }}>
               <span style={{ display: "block", fontSize: "10px", color: "#64748b", textTransform: "uppercase", fontWeight: "700" }}>Active Cohort</span>
-              <strong style={{ fontSize: "14px", color: "#f8fafc" }}>{students.length} Students</strong>
+              <strong style={{ fontSize: "14px", color: "#f8fafc" }}>{students.length.toLocaleString()} Students</strong>
             </div>
             <div style={{ textAlign: "right" }}>
-              <span style={{ display: "block", fontSize: "10px", color: "#64748b", textTransform: "uppercase", fontWeight: "700" }}>ETL Latency</span>
+              <span style={{ display: "block", fontSize: "10px", color: "#64748b", textTransform: "uppercase", fontWeight: "700" }}>Inference Speed</span>
               <strong style={{ fontSize: "14px", color: "#2dd4bf" }}>~1.2s Real-Time</strong>
             </div>
           </div>
@@ -402,7 +402,6 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
 
                 <div style={{ display: "flex", alignItems: "baseline", gap: "6px", width: "100%" }}>
                   <strong>{source.name}</strong>
-                  <span style={{ fontSize: "10px", color: "#64748b", fontFamily: "monospace" }}>{source.code}</span>
                 </div>
                 
                 <small style={{ margin: "4px 0 10px" }}>
@@ -420,15 +419,15 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
                 <div className="data-source__dropzone">
                   {imported?.isUploading ? (
                     <div style={{ fontSize: "11px", color: "#2dd4bf", fontWeight: "600" }}>
-                      ⚡ Parsing spreadsheet & recalculating risk...
+                      ⚡ Recalculating risk scores...
                     </div>
                   ) : (
                     <div>
                       <div style={{ fontSize: "12px", fontWeight: "600", color: "#e2e8f0" }}>
-                        {imported ? `📄 ${imported.name}` : "Drop new dataset or click to browse"}
+                        {imported ? `📄 ${imported.name}` : "Click to browse or drop file"}
                       </div>
                       <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px" }}>
-                        {imported ? `${imported.fileType || "Spreadsheet"} · Updated ${imported.receivedAt || "recently"}` : `Supports ${source.supported}`}
+                        {imported ? `${imported.fileType || "Spreadsheet"} · Synced ${imported.receivedAt || "recently"}` : `Supports ${source.supported}`}
                       </div>
                     </div>
                   )}
@@ -440,7 +439,7 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
                     {imported ? "Auto-synced" : "Ready for Ingestion"}
                   </span>
                   <span className="data-source__action" style={{ color: source.color }}>
-                    {imported ? "Hot-Swap Register ↗" : "Upload File ↗"}
+                    {imported ? "Replace File ↗" : "Upload File ↗"}
                   </span>
                 </div>
               </label>
@@ -451,7 +450,7 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
         {/* Enterprise Template Download Bar */}
         <div className="template-bar">
           <span style={{ fontSize: "11px", color: "#64748b", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            📥 Ready-to-Use Schemas:
+            Sample CSV Templates:
           </span>
           {sourceDefinitions.map((src) => (
             <button
@@ -465,7 +464,7 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
               }}
               title={`Download official ${src.name} CSV template`}
             >
-              {src.icon} {src.name} Template
+              {src.icon} {src.name}
             </button>
           ))}
         </div>
@@ -475,35 +474,35 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
       <section className="operations-card">
         <div className="operations-heading">
           <div>
-            <p className="operations-kicker">02 · Institutional Risk Thresholds</p>
-            <h2>Policy Calibration Engine</h2>
-            <p>Adjust risk triggers to dynamically recalibrate institutional alerts & risk bands.</p>
+            <p className="operations-kicker">02 · Risk Policies</p>
+            <h2>Threshold Calibration</h2>
+            <p>Adjust risk policy thresholds to recalibrate institutional risk bands.</p>
           </div>
           <span className="operations-chip" style={{ background: "rgba(45, 212, 191, 0.15)", color: "#2dd4bf" }}>
-            ⚡ Dynamic Rules Engine
+            Rules Engine
           </span>
         </div>
 
         {/* Live Simulated Impact Breakdown */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", margin: "14px 0 18px" }}>
           <div style={{ background: "rgba(239, 68, 68, 0.12)", border: "1px solid rgba(239, 68, 68, 0.35)", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-            <span style={{ fontSize: "11px", color: "#fca5a5", fontWeight: "700" }}>🔴 High Risk (Red)</span>
+            <span style={{ fontSize: "11px", color: "#fca5a5", fontWeight: "700" }}>High Risk</span>
             <div style={{ fontSize: "18px", fontWeight: "800", color: "#ef4444", marginTop: "2px" }}>
-              {simulatedRiskCounts.red}
+              {simulatedRiskCounts.red.toLocaleString()}
             </div>
             <small style={{ fontSize: "10px", color: "#cbdde0" }}>{((simulatedRiskCounts.red / (students.length || 1)) * 100).toFixed(1)}% of cohort</small>
           </div>
           <div style={{ background: "rgba(245, 158, 11, 0.12)", border: "1px solid rgba(245, 158, 11, 0.35)", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-            <span style={{ fontSize: "11px", color: "#fde047", fontWeight: "700" }}>🟡 Medium (Amber)</span>
+            <span style={{ fontSize: "11px", color: "#fde047", fontWeight: "700" }}>Medium Risk</span>
             <div style={{ fontSize: "18px", fontWeight: "800", color: "#f59e0b", marginTop: "2px" }}>
-              {simulatedRiskCounts.amber}
+              {simulatedRiskCounts.amber.toLocaleString()}
             </div>
             <small style={{ fontSize: "10px", color: "#cbdde0" }}>{((simulatedRiskCounts.amber / (students.length || 1)) * 100).toFixed(1)}% of cohort</small>
           </div>
           <div style={{ background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.35)", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-            <span style={{ fontSize: "11px", color: "#86efac", fontWeight: "700" }}>🟢 Low Risk (Green)</span>
+            <span style={{ fontSize: "11px", color: "#86efac", fontWeight: "700" }}>Low Risk</span>
             <div style={{ fontSize: "18px", fontWeight: "800", color: "#10b981", marginTop: "2px" }}>
-              {simulatedRiskCounts.green}
+              {simulatedRiskCounts.green.toLocaleString()}
             </div>
             <small style={{ fontSize: "10px", color: "#cbdde0" }}>{((simulatedRiskCounts.green / (students.length || 1)) * 100).toFixed(1)}% of cohort</small>
           </div>
@@ -599,13 +598,13 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
       <section className="operations-card">
         <div className="operations-heading">
           <div>
-            <p className="operations-kicker">03 · Multichannel Outreach</p>
-            <h2>Automated Alert Outbox</h2>
-            <p>Schedule proactive notifications to mentors and guardian contacts.</p>
+            <p className="operations-kicker">03 · Notifications</p>
+            <h2>Alert Dispatch</h2>
+            <p>Schedule automated notifications to mentors and guardian contacts.</p>
           </div>
         </div>
         <label className="schedule-field">
-          Automated Dispatch Schedule
+          Dispatch Schedule
           <select value={schedule} onChange={(e) => setSchedule(e.target.value)}>
             <option>Every Monday at 08:00</option>
             <option>Every weekday at 08:00</option>
@@ -615,18 +614,18 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
         <div className="alert-preview">
           <span style={{ fontSize: "22px" }}>📱</span>
           <div>
-            <strong>Automated WhatsApp & SMS Gateway</strong>
-            <small>Dispatches personalized guardian alerts with attendance & grade summaries.</small>
+            <strong>WhatsApp & SMS Gateway</strong>
+            <small>Personalized guardian alerts with attendance and performance summaries.</small>
           </div>
         </div>
         <div style={{ marginTop: "18px" }}>
           <button
             className="alert-button"
-            style={{ width: "100%", background: "#2dd4bf", color: "#082029", border: "none", padding: "10px", borderRadius: "8px", fontWeight: "800", cursor: "pointer" }}
+            style={{ width: "100%", background: "#2dd4bf", color: "#082029", border: "none", padding: "10px", borderRadius: "8px", fontWeight: "700", fontSize: "12px", cursor: "pointer" }}
             onClick={handleTriggerAlertBatch}
             disabled={triggeringAlerts}
           >
-            {triggeringAlerts ? "Dispatching Queue..." : "🚀 Trigger Automated Alert Batch Now"}
+            {triggeringAlerts ? "Dispatching..." : "Dispatch Alert Batch Now ↗"}
           </button>
           {alertStatusMessage && (
             <p style={{ marginTop: "8px", color: "#86efac", fontSize: "12px", textAlign: "center" }}>
@@ -640,9 +639,9 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
       <section className="operations-card operations-card--wide">
         <div className="operations-heading">
           <div>
-            <p className="operations-kicker">04 · Actionable Triage</p>
-            <h2>High-Priority Student Intervention Escalations</h2>
-            <p>Directly update intervention stage or trigger 1-on-1 mentor alerts.</p>
+            <p className="operations-kicker">04 · Case Management</p>
+            <h2>Student Intervention Escalations</h2>
+            <p>Manage active student intervention stages and log mentor outreach actions.</p>
           </div>
         </div>
         <div className="case-list">

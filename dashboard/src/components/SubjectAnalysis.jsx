@@ -38,15 +38,15 @@ export function SubjectAnalysis({ students }) {
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h3 style={{ color: "#f4fafb", margin: 0, fontSize: "16px", fontWeight: "700" }}>
-          ⚠️ Failing Subject Analysis
+        <h3 style={{ color: "#f4fafb", margin: 0, fontSize: "15px", fontWeight: "700" }}>
+          Subject Failure Load
         </h3>
         <span style={{ background: "rgba(45, 212, 191, 0.12)", color: "#2dd4bf", padding: "3px 8px", borderRadius: "5px", fontSize: "11px", fontWeight: "700" }}>
-          ✓ {passingStudents} Passing All
+          {Number(passingStudents).toLocaleString()} Passing All
         </span>
       </div>
       <p style={{ color: "#9ab3b8", margin: 0, fontSize: "12px" }}>
-        Count of students struggling with multiple concurrent subject failures.
+        Distribution of concurrent failing subjects per student.
       </p>
 
       <div style={{ width: "100%", height: 260 }}>
@@ -56,14 +56,25 @@ export function SubjectAnalysis({ students }) {
             <XAxis dataKey="subjects" stroke="#9ab3b8" tick={{ fontSize: 11, fill: "#cbdde0" }} />
             <YAxis stroke="#9ab3b8" tick={{ fontSize: 11, fill: "#cbdde0" }} allowDecimals={false} />
             <Tooltip
-              formatter={(value) => [`${value} students`, "Count"]}
+              formatter={(value) => [`${Number(value).toLocaleString()} students`, "Count"]}
               cursor={{ fill: "rgba(239, 68, 68, 0.08)" }}
               contentStyle={{
-                background: "#081723",
+                backgroundColor: "#0a1928",
                 border: "1px solid #ef4444",
                 borderRadius: "8px",
-                color: "#f4fafb",
+                padding: "8px 14px",
+                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6)",
+              }}
+              itemStyle={{
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: "600",
+              }}
+              labelStyle={{
+                color: "#fca5a5",
                 fontSize: "12px",
+                fontWeight: "700",
+                marginBottom: "4px",
               }}
             />
             <Bar dataKey="count" fill="#ef4444" name="Students" radius={[6, 6, 0, 0]} />

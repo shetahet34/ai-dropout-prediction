@@ -78,11 +78,11 @@ export function MentorStudentsGrouping({ students, onSelect }) {
         }}
       >
         <div>
-          <h3 style={{ margin: 0, fontSize: "17px", color: "#f8fafc", fontWeight: "700" }}>
-            👥 Mentor Caseload & Risk Stratification
+          <h3 style={{ margin: 0, fontSize: "16px", color: "#f8fafc", fontWeight: "700" }}>
+            Mentor Caseload Stratification
           </h3>
           <p style={{ margin: "3px 0 0", fontSize: "12px", color: "#94a3b8" }}>
-            Exact student risk count per faculty mentor (High: ≥70%, Medium: 40–69%, Safe: &lt;40%).
+            Active risk distribution across faculty mentor caseloads.
           </p>
         </div>
 

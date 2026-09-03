@@ -25,11 +25,11 @@ export function ClassRiskChart({ students }) {
       }}
     >
       <div>
-        <h3 style={{ color: "#f4fafb", margin: 0, fontSize: "16px", fontWeight: "700" }}>
-          ⚠️ Risk Composition by Section
+        <h3 style={{ color: "#f4fafb", margin: 0, fontSize: "15px", fontWeight: "700" }}>
+          Section Risk Composition
         </h3>
         <p style={{ color: "#9ab3b8", margin: "2px 0 0", fontSize: "12px" }}>
-          Stacked risk volume (High, Medium, Low) across class sections.
+          Risk tier distribution across class sections.
         </p>
       </div>
 
@@ -42,11 +42,22 @@ export function ClassRiskChart({ students }) {
             <Tooltip
               cursor={{ fill: "rgba(45, 212, 191, 0.08)" }}
               contentStyle={{
-                background: "#081723",
+                backgroundColor: "#0a1928",
                 border: "1px solid #2dd4bf",
                 borderRadius: "8px",
-                color: "#f4fafb",
+                padding: "8px 14px",
+                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6)",
+              }}
+              itemStyle={{
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: "600",
+              }}
+              labelStyle={{
+                color: "#2dd4bf",
                 fontSize: "12px",
+                fontWeight: "700",
+                marginBottom: "4px",
               }}
             />
             <Legend verticalAlign="bottom" wrapperStyle={{ color: "#cbdde0", fontSize: "12px", paddingTop: "8px" }} />

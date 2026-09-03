@@ -43,11 +43,11 @@ export function AttendanceTrendChart({ students }) {
       }}
     >
       <div>
-        <h3 style={{ color: "#f4fafb", margin: 0, fontSize: "16px", fontWeight: "700" }}>
-          📍 Attendance Brackets
+        <h3 style={{ color: "#f4fafb", margin: 0, fontSize: "15px", fontWeight: "700" }}>
+          Attendance Distribution
         </h3>
         <p style={{ color: "#9ab3b8", margin: "2px 0 0", fontSize: "12px" }}>
-          Student counts across attendance tiers (75% minimum institutional target).
+          Cohort distribution across attendance brackets.
         </p>
       </div>
 
@@ -58,14 +58,25 @@ export function AttendanceTrendChart({ students }) {
             <XAxis dataKey="range" stroke="#9ab3b8" tick={{ fontSize: 11, fill: "#cbdde0" }} />
             <YAxis stroke="#9ab3b8" tick={{ fontSize: 11, fill: "#cbdde0" }} allowDecimals={false} />
             <Tooltip
-              formatter={(value) => [`${value} students`, "Attendance Count"]}
+              formatter={(value) => [`${Number(value).toLocaleString()} students`, "Enrolled"]}
               cursor={{ stroke: "#2dd4bf", strokeWidth: 1 }}
               contentStyle={{
-                background: "#081723",
-                border: "1px solid #2dd4bf",
+                backgroundColor: "#0a1928",
+                border: "1px solid #f2bd74",
                 borderRadius: "8px",
-                color: "#f4fafb",
+                padding: "8px 14px",
+                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6)",
+              }}
+              itemStyle={{
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: "600",
+              }}
+              labelStyle={{
+                color: "#f2bd74",
                 fontSize: "12px",
+                fontWeight: "700",
+                marginBottom: "4px",
               }}
             />
             <Line

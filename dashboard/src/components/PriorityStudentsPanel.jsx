@@ -26,18 +26,15 @@ export function PriorityStudentsPanel({ students, onSelect }) {
         }}
       >
         <div>
-          <span style={{ color: "#2dd4bf", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            Immediate Attention Queue
-          </span>
-          <h2 style={{ color: "#f4fafb", margin: "4px 0 0", fontSize: "18px" }}>
-            High-Priority Student Interventions
+          <h2 style={{ color: "#f4fafb", margin: 0, fontSize: "16px", fontWeight: "700" }}>
+            Priority Intervention Queue
           </h2>
-          <p style={{ color: "#9ab3b8", fontSize: "12px", margin: "4px 0 0" }}>
-            Students matching multiple severe risk factors (low attendance, failing marks, declining trends).
+          <p style={{ color: "#9ab3b8", fontSize: "12px", margin: "3px 0 0" }}>
+            Highest predicted dropout probability requiring immediate mentor outreach.
           </p>
         </div>
         <span style={{ color: "#2dd4bf", fontSize: "11px", fontWeight: "600" }}>
-          Click to open Student 360° profile ↗
+          Select student to open profile ↗
         </span>
       </div>
 

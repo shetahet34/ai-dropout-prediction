@@ -52,11 +52,11 @@ export function MentorAnalysis({ students }) {
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h3 style={{ color: "#f4fafb", margin: 0, fontSize: "16px", fontWeight: "700" }}>
-            👥 Mentor Risk Caseload Distribution
+          <h3 style={{ color: "#f4fafb", margin: 0, fontSize: "15px", fontWeight: "700" }}>
+            Faculty Mentor Caseload
           </h3>
           <p style={{ color: "#9ab3b8", margin: "2px 0 0", fontSize: "12px" }}>
-            {showTopOnly ? "Top 10 Mentors with Highest High-Risk Volume (≥70%)" : "Top 20 Mentors Overview"}
+            {showTopOnly ? "Mentors with highest high-risk volume (≥70% probability)" : "Top 20 faculty mentors caseload"}
           </p>
         </div>
         <button
@@ -72,7 +72,7 @@ export function MentorAnalysis({ students }) {
             cursor: "pointer",
           }}
         >
-          {showTopOnly ? "View Top 20" : "View Top 10"}
+          {showTopOnly ? "Show 20" : "Show 10"}
         </button>
       </div>
 
@@ -93,16 +93,21 @@ export function MentorAnalysis({ students }) {
               stroke="#9ab3b8"
             />
             <Tooltip
-              formatter={(value, name) => [`${value} students`, name]}
+              formatter={(value, name) => [`${Number(value).toLocaleString()} students`, name]}
               cursor={{ fill: "rgba(45, 212, 191, 0.08)" }}
               contentStyle={{
-                backgroundColor: "#081723",
+                backgroundColor: "#0a1928",
                 border: "1px solid #2dd4bf",
                 borderRadius: "8px",
-                color: "#f4fafb",
-                fontSize: "12px",
+                padding: "8px 14px",
+                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6)",
               }}
-              labelStyle={{ color: "#2dd4bf", fontWeight: "700" }}
+              itemStyle={{
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: "600",
+              }}
+              labelStyle={{ color: "#2dd4bf", fontWeight: "700", marginBottom: "4px" }}
             />
             <Legend
               verticalAlign="bottom"

@@ -54,15 +54,15 @@ export function PerformanceMomentumChart({ students }) {
     >
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <h3 style={{ color: "#e0e7ff", margin: 0, fontSize: "16px", fontWeight: "700" }}>
-            📈 Performance Momentum Analysis
+          <h3 style={{ color: "#e0e7ff", margin: 0, fontSize: "15px", fontWeight: "700" }}>
+            Academic Momentum Trajectory
           </h3>
           <span style={{ fontSize: "11px", color: "#93c5fd", fontWeight: "600" }}>
-            Term-over-Term Trajectory
+            Term-over-Term
           </span>
         </div>
         <p style={{ color: "#94a3b8", margin: "4px 0 0", fontSize: "12px" }}>
-          Distribution of students gaining, maintaining, or losing academic momentum across score tiers.
+          Term-over-term score progression across performance tiers.
         </p>
       </div>
 
@@ -85,17 +85,20 @@ export function PerformanceMomentumChart({ students }) {
             />
             <Tooltip
               contentStyle={{
-                background: "#0f172a",
+                backgroundColor: "#0a1928",
                 border: "1px solid #3b82f6",
                 borderRadius: "8px",
-                padding: "10px 14px",
-                color: "#f8fafc",
-                fontSize: "12px",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                padding: "8px 14px",
+                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6)",
+              }}
+              itemStyle={{
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: "600",
               }}
               labelStyle={{ color: "#93c5fd", fontWeight: "700", marginBottom: "4px" }}
               formatter={(value, name) => [
-                `${value} students (${((value / totalStudents) * 100).toFixed(1)}%)`,
+                `${Number(value).toLocaleString()} students (${((value / totalStudents) * 100).toFixed(1)}%)`,
                 name
               ]}
             />
