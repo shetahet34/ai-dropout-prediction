@@ -3,6 +3,14 @@ import { uploadDataSource, fetchPolicy, updatePolicy, queueAlerts, saveIntervent
 
 const sourceDefinitions = [
   {
+    id: "students",
+    name: "Student Master Directory",
+    detail: "Student ID, names, class sections, streams & contacts",
+    supported: "CSV / Excel (.xlsx)",
+    color: "#2dd4bf",
+    icon: "👥",
+  },
+  {
     id: "attendance",
     name: "Attendance Register",
     detail: "Daily student presence logs, leaves & monthly %",
@@ -263,9 +271,10 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
   const importFile = async (event, id) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    event.target.value = "";
     setImports((current) => ({
       ...current,
-      [id]: { name: file.name, status: "Processing...", isUploading: true }
+      [id]: { name: file.name, status: "Processing & recalculating...", isUploading: true }
     }));
     try {
       const result = await uploadDataSource(id, file, token);
@@ -285,7 +294,7 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
     } catch (error) {
       setImports((current) => ({
         ...current,
-        [id]: { name: file.name, status: error.message, error: true, isUploading: false }
+        [id]: { name: file.name, status: error.message || "Import failed", error: true, isUploading: false }
       }));
     }
   };
@@ -301,7 +310,7 @@ export function EarlyWarningOperations({ students, token, onSelect, onDataRefres
             <p>Upload fresh CSV or Excel (.xlsx) exports from your School ERP/SIS to synchronize risk scores.</p>
           </div>
           <span className="operations-chip">
-            {Object.keys(imports).length}/3 active sources loaded
+            {Object.keys(imports).length}/{sourceDefinitions.length} active sources loaded
           </span>
         </div>
 

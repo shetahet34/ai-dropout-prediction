@@ -857,8 +857,8 @@ def get_data_sources(authorization: Optional[str] = Header(default=None)):
 @app.post("/ingest/{source}")
 async def ingest_source(source: str, file: UploadFile = File(...), authorization: Optional[str] = Header(default=None)):
     account = get_current_account(authorization)
-    if source not in {"attendance", "assessments", "fees"}:
-        raise HTTPException(400, "Source must be 'attendance', 'assessments', or 'fees'.")
+    if source not in {"attendance", "assessments", "fees", "students"}:
+        raise HTTPException(400, "Source must be 'attendance', 'assessments', 'fees', or 'students'.")
     
     filename = file.filename or "uploaded_file"
     ext = Path(filename).suffix.lower()
@@ -889,10 +889,15 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
 
     # Normalize column names
     col_map = {str(col).strip().lower(): col for col in df.columns}
-    id_col = next((col_map[c] for c in ["student_id", "studentid", "student id", "id", "roll_no", "rollno"] if c in col_map), None)
+    id_col = next((col_map[c] for c in ["student_id", "studentid", "student id", "id", "roll_no", "rollno", "roll no", "reg_no", "reg no", "registration_no", "enrollment_no"] if c in col_map), None)
     
     if not id_col:
-        raise HTTPException(400, f"Could not find a Student ID column in {filename}. Expected 'student_id' or 'Student ID'.")
+        # Fallback: check if the first column looks like an ID
+        first_col = df.columns[0]
+        if any(keyword in str(first_col).lower() for keyword in ["id", "roll", "reg", "student"]):
+            id_col = first_col
+        else:
+            raise HTTPException(400, f"Could not find a Student ID column in {filename}. Expected 'student_id' or 'Student ID'.")
 
     name_col = next((col_map[c] for c in ["student_name", "name", "student name", "full_name"] if c in col_map), None)
     class_col = next((col_map[c] for c in ["class_section", "class", "section", "grade"] if c in col_map), None)
@@ -911,42 +916,62 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
         cursor = conn.cursor()
         
         # Clean replacement: Clear the specific register to replace old data with new dataset
-        cursor.execute(f"DELETE FROM {source}")
-
-        uploaded_sids = set()
+        if source in {"attendance", "assessments", "fees"}:
+            cursor.execute(f"DELETE FROM {source}")
 
         for idx, row in df.iterrows():
             raw_id = str(row[id_col]).strip()
             if not raw_id or raw_id.lower() == "nan":
                 continue
 
-            uploaded_sids.add(raw_id)
-
             # Ensure student is in `students` master table
             exists_stu = cursor.execute("SELECT 1 FROM students WHERE student_id = ?", (raw_id,)).fetchone()
-            if not exists_stu:
+            if not exists_stu or source == "students":
                 s_name = str(row[name_col]).strip() if name_col and not pd.isna(row[name_col]) else f"{first_names[idx % len(first_names)]} {last_names[(idx // len(first_names)) % len(last_names)]}"
                 s_class = str(row[class_col]).strip() if class_col and not pd.isna(row[class_col]) else default_classes[idx % len(default_classes)]
                 s_stream = str(row[stream_col]).strip() if stream_col and not pd.isna(row[stream_col]) else ("Science" if "A" in s_class else "Commerce")
                 s_mentor = str(row[mentor_col]).strip() if mentor_col and not pd.isna(row[mentor_col]) else default_mentors[idx % len(default_mentors)]
-                phone = 9800000000 + (idx % 9999999)
-                email = f"{s_name.lower().replace(' ', '.')}@example.com"
+                phone_col = next((col_map[c] for c in ["guardian_phone", "phone", "mobile", "contact"] if c in col_map), None)
+                email_col = next((col_map[c] for c in ["guardian_email", "email", "mail"] if c in col_map), None)
+                phone = str(row[phone_col]).strip() if phone_col and not pd.isna(row[phone_col]) else str(9800000000 + (idx % 9999999))
+                email = str(row[email_col]).strip() if email_col and not pd.isna(row[email_col]) else f"{s_name.lower().replace(' ', '.')}@example.com"
                 
                 cursor.execute("""
                     INSERT INTO students (student_id, student_name, class_section, stream, mentor_name, guardian_phone, guardian_email)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(student_id) DO UPDATE SET
+                        student_name = COALESCE(excluded.student_name, students.student_name),
+                        class_section = COALESCE(excluded.class_section, students.class_section),
+                        stream = COALESCE(excluded.stream, students.stream),
+                        mentor_name = COALESCE(excluded.mentor_name, students.mentor_name),
+                        guardian_phone = COALESCE(excluded.guardian_phone, students.guardian_phone),
+                        guardian_email = COALESCE(excluded.guardian_email, students.guardian_email)
                 """, (raw_id, s_name, s_class, s_stream, s_mentor, phone, email))
+                if source == "students":
+                    rows_imported += 1
                 
             # 1. Update Attendance Register
             if source == "attendance":
                 att_val = None
-                for candidate in ["latest_attendance_pct", "attendance_pct", "attendance", "pct", "latest_attendance"]:
+                for candidate in ["latest_attendance_pct", "avg_attendance_pct", "attendance_pct", "attendance", "pct", "latest_attendance", "percentage"]:
                     if candidate in col_map and not pd.isna(row[col_map[candidate]]):
                         try:
                             att_val = float(row[col_map[candidate]])
                             break
-                        except ValueError:
+                        except (ValueError, TypeError):
                             pass
+
+                if att_val is None:
+                    # Look for any month columns
+                    month_cols = [c for c in df.columns if any(m in str(c).lower() for m in ["feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "jan"])]
+                    if month_cols:
+                        for mc in reversed(month_cols):
+                            try:
+                                att_val = float(row[mc])
+                                if not pd.isna(att_val):
+                                    break
+                            except (ValueError, TypeError):
+                                pass
 
                 att_trend_val = None
                 for candidate in ["attendance_trend", "trend", "att_trend"]:
@@ -954,17 +979,7 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
                         try:
                             att_trend_val = float(row[col_map[candidate]])
                             break
-                        except ValueError:
-                            pass
-
-                if att_trend_val is None:
-                    month_cols = [c for c in df.columns if any(m in str(c).lower() for m in ["feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "jan"])]
-                    if len(month_cols) >= 2:
-                        try:
-                            f_m = float(row[month_cols[0]])
-                            l_m = float(row[month_cols[-1]])
-                            att_trend_val = round(l_m - f_m, 1)
-                        except Exception:
+                        except (ValueError, TypeError):
                             pass
 
                 if att_trend_val is None and att_val is not None:
@@ -980,13 +995,27 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
             # 2. Update Assessment Register
             elif source == "assessments":
                 score_val = None
-                for candidate in ["avg_score_latest", "score", "marks", "grade", "average_score", "latest_score"]:
+                for candidate in ["avg_score_latest", "score", "marks", "grade", "average_score", "latest_score", "percentage"]:
                     if candidate in col_map and not pd.isna(row[col_map[candidate]]):
                         try:
                             score_val = float(row[col_map[candidate]])
                             break
-                        except ValueError:
+                        except (ValueError, TypeError):
                             pass
+
+                if score_val is None:
+                    subject_score_cols = [c for c in df.columns if any(k in str(c).lower() for k in ["_score", "marks", "score"])]
+                    if subject_score_cols:
+                        valid_scores = []
+                        for sc in subject_score_cols:
+                            try:
+                                v = float(row[sc])
+                                if not pd.isna(v):
+                                    valid_scores.append(v)
+                            except (ValueError, TypeError):
+                                pass
+                        if valid_scores:
+                            score_val = round(sum(valid_scores) / len(valid_scores), 1)
 
                 prev_score_val = None
                 for candidate in ["avg_score_previous", "previous_score", "prev_score", "score_prev"]:
@@ -994,7 +1023,7 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
                         try:
                             prev_score_val = float(row[col_map[candidate]])
                             break
-                        except ValueError:
+                        except (ValueError, TypeError):
                             pass
 
                 trend_val = None
@@ -1003,7 +1032,7 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
                         try:
                             trend_val = float(row[col_map[candidate]])
                             break
-                        except ValueError:
+                        except (ValueError, TypeError):
                             pass
 
                 if trend_val is None and score_val is not None and prev_score_val is not None:
@@ -1021,8 +1050,17 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
                         try:
                             fails_val = int(row[col_map[candidate]])
                             break
-                        except ValueError:
+                        except (ValueError, TypeError):
                             pass
+
+                if fails_val is None:
+                    fail_cols = [c for c in df.columns if "result" in str(c).lower()]
+                    if fail_cols:
+                        fails_val = sum(1 for fc in fail_cols if str(row[fc]).strip().lower() == "fail")
+                    elif score_val is not None and score_val < 40.0:
+                        fails_val = 1
+                    else:
+                        fails_val = 0
                 
                 if score_val is not None or fails_val is not None:
                     cursor.execute("""
@@ -1034,20 +1072,35 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
             # 3. Update Fee Ledger
             elif source == "fees":
                 overdue_val = None
-                for candidate in ["max_days_overdue", "days_overdue", "overdue_days", "overdue"]:
+                for candidate in ["max_days_overdue", "days_overdue", "overdue_days", "overdue", "pending_days"]:
                     if candidate in col_map and not pd.isna(row[col_map[candidate]]):
                         try:
                             overdue_val = int(row[col_map[candidate]])
                             break
-                        except ValueError:
+                        except (ValueError, TypeError):
                             pass
+
+                if overdue_val is None:
+                    overdue_cols = [c for c in df.columns if "overdue" in str(c).lower()]
+                    if overdue_cols:
+                        ov_list = []
+                        for oc in overdue_cols:
+                            try:
+                                v = int(row[oc])
+                                if not pd.isna(v):
+                                    ov_list.append(v)
+                            except (ValueError, TypeError):
+                                pass
+                        if ov_list:
+                            overdue_val = max(ov_list)
+
                 unpaid_val = None
                 for candidate in ["unpaid_installments", "unpaid", "pending_installments"]:
                     if candidate in col_map and not pd.isna(row[col_map[candidate]]):
                         try:
                             unpaid_val = int(row[col_map[candidate]])
                             break
-                        except ValueError:
+                        except (ValueError, TypeError):
                             pass
 
                 if overdue_val is not None or unpaid_val is not None:
@@ -1057,29 +1110,16 @@ async def ingest_source(source: str, file: UploadFile = File(...), authorization
                     """, (raw_id, overdue_val, unpaid_val))
                     rows_imported += 1
 
-        # Prune inactive students: keep only students that exist in the active registers
-        cursor.execute("""
-            DELETE FROM students 
-            WHERE student_id NOT IN (
-                SELECT student_id FROM attendance
-                UNION
-                SELECT student_id FROM assessments
-                UNION
-                SELECT student_id FROM fees
-            )
-        """)
-        cursor.execute("""
-            DELETE FROM student_risk_scores 
-            WHERE student_id NOT IN (
-                SELECT student_id FROM students
-            )
-        """)
-
         # Real-time Recalculate Risk Scores using active dynamic institutional policy
         recalculate_cohort_risk_scores(conn)
 
         # Save to data_sources table
-        source_name = "Attendance Register" if source == "attendance" else ("Assessment Results" if source == "assessments" else "Fee Payment Register")
+        source_name = (
+            "Attendance Register" if source == "attendance"
+            else ("Assessment Results" if source == "assessments"
+            else ("Fee Payment Register" if source == "fees"
+            else "Student Master Directory"))
+        )
         cursor.execute("""
             INSERT INTO data_sources (id, name, filename, file_type, rows_imported, updated_at)
             VALUES (?, ?, ?, ?, ?, ?)

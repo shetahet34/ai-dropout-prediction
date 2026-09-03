@@ -42,7 +42,24 @@ export async function uploadDataSource(source, file, token) {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body 
   });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || "Import failed");
+  if (!res.ok) {
+    if (res.status === 401) {
+      sessionStorage.removeItem("mentor_session");
+      window.location.reload();
+      throw new Error("Session expired. Please log in again.");
+    }
+    let errMsg = `Upload failed (${res.status})`;
+    try {
+      const data = await res.json();
+      errMsg = data.detail || data.message || JSON.stringify(data);
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) errMsg = text.substring(0, 150);
+      } catch (_) {}
+    }
+    throw new Error(errMsg);
+  }
   return res.json();
 }
 
