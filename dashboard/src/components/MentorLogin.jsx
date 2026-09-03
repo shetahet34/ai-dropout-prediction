@@ -53,7 +53,7 @@ export function MentorLogin({ onLogin }) {
             <input
               value={accountId}
               onChange={(event) => setAccountId(event.target.value)}
-              placeholder="e.g. principal or Mentor D - Mehta"
+              placeholder="e.g. principal or mentor-anita"
               autoComplete="username"
               required
             />
@@ -78,6 +78,13 @@ export function MentorLogin({ onLogin }) {
             <span>↗</span>
           </button>
         </form>
+
+        <div style={{ marginTop: "18px", padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", fontSize: "11px", color: "#94a3b8", lineHeight: "1.6" }}>
+          <strong style={{ color: "#2dd4bf", display: "block", marginBottom: "4px" }}>🔑 Access Credentials:</strong>
+          <div>• <strong>Principal</strong> (All students): <code>principal</code> / <code>principal123</code></div>
+          <div>• <strong>Mentor Anita</strong> (Assigned cohort): <code>mentor-anita</code> / <code>change-me</code></div>
+          <div>• <strong>Mentor Rohan</strong> (Assigned cohort): <code>mentor-rohan</code> / <code>mentor123</code></div>
+        </div>
 
         <p className="login-footnote">
           🔒 Secure authentication. Your view is automatically scoped to your assigned cohort and role.

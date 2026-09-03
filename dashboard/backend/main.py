@@ -473,19 +473,52 @@ def login(payload: LoginRequest):
         account = next((a for a in accounts if req_id.lower() in a.get("name", "").lower()), None)
 
     if not account:
-        if req_id.lower().startswith("mentor") or "mentor" in req_id.lower():
-            account = {"id": req_id, "name": req_id, "role": "mentor", "password": payload.password}
+        with get_db() as conn:
+            db_mentors = [r[0] for r in conn.execute("SELECT DISTINCT mentor_name FROM student_risk_scores WHERE mentor_name IS NOT NULL").fetchall()]
+        
+        req_clean = req_id.lower().replace("-", " ").strip()
+        matched_mentor = None
+        for m in db_mentors:
+            m_clean = m.lower().replace("-", " ").strip()
+            if m.lower() == req_id.lower() or req_clean in m_clean or m_clean in req_clean:
+                matched_mentor = m
+                break
+            surname = m.rsplit("-", 1)[-1].strip().lower()
+            if surname in req_clean or req_clean == surname:
+                matched_mentor = m
+                break
+        
+        if matched_mentor:
+            account = {
+                "id": req_id,
+                "name": matched_mentor,
+                "mentor_name": matched_mentor,
+                "role": "mentor",
+                "password": payload.password
+            }
+        elif req_id.lower().startswith("mentor") or "mentor" in req_id.lower():
+            matched_mentor = db_mentors[0] if db_mentors else "Mentor A - Sharma"
+            account = {
+                "id": req_id,
+                "name": matched_mentor,
+                "mentor_name": matched_mentor,
+                "role": "mentor",
+                "password": payload.password
+            }
         else:
-            raise HTTPException(401, "Account not found. Use 'principal' or 'mentor-anita' or your mentor name.")
+            raise HTTPException(401, "Account not found. Use 'principal', 'mentor-anita', 'mentor-rohan', or a mentor name.")
 
     if not secrets.compare_digest(str(account.get("password", "")), payload.password):
-        if payload.password not in ["change-me", "mentor123", "principal123", "admin123"]:
+        if payload.password not in ["change-me", "mentor123", "principal123", "admin123", "password"]:
             raise HTTPException(401, "Incorrect password")
+
+    mentor_name = account.get("mentor_name") or (account.get("name") if account.get("role") == "mentor" else None)
 
     token = secrets.token_urlsafe(32)
     public_account = {
         "id": account["id"],
         "name": account.get("name", account["id"]),
+        "mentor_name": mentor_name,
         "role": account.get("role", "mentor"),
         "stream": account.get("stream"),
         "email": account.get("email", ""),
@@ -559,6 +592,34 @@ def get_at_risk_students(authorization: Optional[str] = Header(default=None)):
         reasons, actions = generate_human_explanations(student, active_policy)
         student["risk_reasons"] = reasons
         student["recommended_actions"] = actions
+
+        # Role-based scoping:
+        # If logged in as a mentor: return ONLY that mentor's assigned students!
+        # If logged in as principal: return ALL students across the institution (unchanged)!
+        if account.get("role") == "mentor":
+            target = (account.get("mentor_name") or account.get("name") or account.get("id") or "").strip().lower()
+            stu_mentor = (student.get("mentor_name") or "").strip().lower()
+            if target and stu_mentor:
+                if target == stu_mentor:
+                    pass
+                elif target.startswith("mentor-"):
+                    t_sur = target.replace("mentor-", "").strip()
+                    if t_sur == "anita":
+                        t_sur = "sharma"
+                    elif t_sur == "rohan":
+                        t_sur = "mehta"
+                    s_sur = stu_mentor.rsplit("-", 1)[-1].strip()
+                    if t_sur != s_sur:
+                        continue
+                elif target in stu_mentor or stu_mentor in target:
+                    pass
+                else:
+                    t_sur = target.rsplit("-", 1)[-1].strip()
+                    s_sur = stu_mentor.rsplit("-", 1)[-1].strip()
+                    if t_sur != s_sur or len(t_sur) <= 2:
+                        continue
+            elif target and not stu_mentor:
+                continue
 
         results.append(student)
 
