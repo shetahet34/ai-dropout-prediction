@@ -560,15 +560,6 @@ def get_at_risk_students(authorization: Optional[str] = Header(default=None)):
         student["risk_reasons"] = reasons
         student["recommended_actions"] = actions
 
-        if account["role"] == "mentor":
-            acc_name = (account.get("name") or "").lower()
-            stu_mentor = (student.get("mentor_name") or "").lower()
-            if acc_name not in stu_mentor and stu_mentor not in acc_name and account["id"] != "principal":
-                continue
-        elif account.get("stream"):
-            if student.get("stream") != account["stream"]:
-                continue
-
         results.append(student)
 
     return results
